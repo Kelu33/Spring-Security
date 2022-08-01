@@ -2,7 +2,6 @@ package fr.wcs.shield.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -25,7 +24,7 @@ public class SecurityConfiguration {
         UserDetails admin = User.builder()
                 .username("Nick")
                 .password("{bcrypt}$2y$10$Y5LAL9M12cllsWRKE7nMYuGrTJrySBQaXJ9PPBQ3hvJOYHgc.nqn6")
-                .roles("CHAMPION", "DIRECTOR")
+                .roles("DIRECTOR")
                 .build();
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
         manager.createUser(user);
@@ -34,7 +33,16 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    @Order(1)
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .antMatcher("/avengers/assemble")
+                .authorizeHttpRequests(authorize -> authorize
+                        .anyRequest().hasRole("CHAMPION")
+                )
+                .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
+    @Bean
     public SecurityFilterChain secretBasesFilterChain(HttpSecurity http) throws Exception {
         http
                 .antMatcher("/secret-bases")
@@ -44,17 +52,6 @@ public class SecurityConfiguration {
                 .httpBasic(Customizer.withDefaults());
         return http.build();
     }
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .anyRequest().authenticated()
-                )
-                .httpBasic(Customizer.withDefaults());
-        return http.build();
-    }
-
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().antMatchers("/");
